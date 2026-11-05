@@ -82,7 +82,7 @@ That has one consequence worth knowing: **localStorage is per-browser and per-de
 
 - **The weights are guesses.** They need real usage before they mean anything. The honest version of this project ships, gets used for a month, and then the ranking gets rewritten against what actually happened.
 - **"Did it cold" is self-reported.** Nothing verifies it. A version that timed the work, or checked an answer, would produce a track state worth more.
-- **Eighteen tasks is thin.** It runs dry in a few weeks of daily use.
+- **Twenty-two tasks is thin.** It runs dry in a few weeks of daily use.
 - **No spaced repetition.** A task done cold in October should resurface in November to check it stuck. Right now a completed task is simply deprioritised forever.
 - **Accessibility is adequate, not good.** Buttons carry `aria-pressed` and focus is visible, but the desk grid and track bars are not described for a screen reader.
 
