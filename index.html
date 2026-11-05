@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Desk — a practice tracker for analytics and economic consulting</title>
+<meta name="description" content="Pick how long you have, get one real task across Python, SQL, Stata, Excel or interpretation, and leave an artifact behind.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🗂️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <div>
+      <p class="lbl">Finance · analytics · economic consulting</p>
+      <h1>The Desk</h1>
+      <p class="tagline">Every finished task leaves something behind. The desk filling up is the progress — not the streak.</p>
+    </div>
+    <div class="streak" title="Consecutive days with at least one finished task">
+      <b class="mono" id="streak-n">0</b>
+      <span id="streak-label">no streak —<br>start one today</span>
+    </div>
+  </header>
+
+  <!-- ── Today: budget → one task → check-in ───────────────────────── -->
+  <section class="panel" aria-labelledby="today-h">
+    <div class="panel-head">
+      <h2 id="today-h">How long have you got?</h2>
+      <p class="hint" id="budget-hint">Pick a budget and you'll get one task that fits it.</p>
+    </div>
+    <div class="budget" id="budget" role="group" aria-label="Time available today"></div>
+    <div id="slot"></div>
+  </section>
+
+  <!-- ── The desk: artifacts from finished work ────────────────────── -->
+  <section class="panel" aria-labelledby="desk-h">
+    <div class="panel-head">
+      <h2 id="desk-h">The desk</h2>
+      <p class="hint">Artifacts from finished work. The brass pin marks something you could show an employer.</p>
+    </div>
+    <div id="desk"></div>
+  </section>
+
+  <!-- ── Tracks: state earned from evidence ────────────────────────── -->
+  <section class="panel" aria-labelledby="tracks-h">
+    <div class="panel-head">
+      <h2 id="tracks-h">Tracks</h2>
+      <p class="hint">Bars are completed tasks, coloured by how it went. State is earned from evidence, never from time spent.</p>
+    </div>
+    <div class="tracks" id="tracks"></div>
+  </section>
+
+  <!-- ── Your data ─────────────────────────────────────────────────── -->
+  <section class="panel" aria-labelledby="data-h">
+    <div class="panel-head">
+      <h2 id="data-h">Your data</h2>
+      <p class="hint">Everything is stored in this browser only. Nothing is uploaded anywhere.</p>
+    </div>
+    <div class="row">
+      <button class="btn" id="export" type="button">Export JSON</button>
+      <label class="btn" for="import-file">Import JSON</label>
+      <input type="file" id="import-file" accept="application/json,.json" hidden>
+      <button class="btn danger" id="reset" type="button">Erase everything</button>
+      <span class="toast" id="data-toast" role="status"></span>
+    </div>
+    <p class="hint" style="margin-top:10px">
+      Export before clearing site data or switching browser — localStorage does not travel with you.
+      The export is also the quickest way to hand your progress to someone for review.
+    </p>
+  </section>
+
+  <footer id="foot"></footer>
+
+</div>
+
+<script src="js/tasks.js"></script>
+<script src="js/store.js"></script>
+<script src="js/recommend.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
