@@ -56,6 +56,32 @@ const Engine = (function () {
     return ['Building', ''];
   }
 
+  /**
+   * What the track needs to reach its next state, phrased as finished work.
+   * The count assumes the next results are all cold — stated as such, because
+   * a target that silently assumed a worse run would be a different number.
+   */
+  function requirement(s) {
+    const [label, cls] = trackState(s);
+    if (cls === 'review')
+      return 'Two or more shaky results in the last four. Repeat work here until the recent run is clean.';
+    if (label === 'Not started')
+      return 'One finished task starts this track.';
+    if (label === 'Interview-ready')
+      return 'Holding. Stays here while 5+ finished sit at 70% cold or better.';
+
+    // Smallest number of further cold results that satisfies both the count
+    // and the rate for the next tier.
+    const need = (minN, rate) => Math.max(
+      minN - s.n,
+      Math.ceil((rate * s.n - s.cold) / (1 - rate)),
+      1
+    );
+    return label === 'Solid'
+      ? `${need(5, 0.7)} more done cold reaches Interview-ready.`
+      : `${need(3, 0.6)} more done cold reaches Solid.`;
+  }
+
   /** Consecutive days with at least one completion, counting back from today. */
   function streak(completions) {
     const days = [...new Set(completions.map(c => c.date))].sort().reverse();
@@ -111,5 +137,5 @@ const Engine = (function () {
       .map(x => x.t);
   }
 
-  return { stats, trackState, streak, rank, today, taskById };
+  return { stats, trackState, requirement, streak, rank, today, taskById };
 })();

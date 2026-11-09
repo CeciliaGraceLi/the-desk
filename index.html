@@ -5,79 +5,176 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Desk — a practice tracker for analytics and economic consulting</title>
 <meta name="description" content="Pick how long you have, get one real task across Python, SQL, Stata, Excel or interpretation, and leave an artifact behind.">
-<meta name="color-scheme" content="light dark">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🗂️</text></svg>">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0B0F0D">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230B0F0D'/><path d='M16 6 9 12v3h14v-3z' fill='%23E8B661'/><path d='M16 15v11' stroke='%23E8B661' stroke-width='2'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<div class="wrap">
+<!-- ══ top bar: persistent across views ═══════════════════════════════ -->
+<header class="topbar">
+  <a class="brand" href="#/today">
+    <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
+      <path d="M11 3.5 5 8.5v2h12v-2z" fill="currentColor"/>
+      <path d="M11 10.5v7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      <path d="M7 18.5h8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+    </svg>
+    <span>The Desk</span>
+  </a>
 
-  <header>
-    <div>
-      <p class="lbl">Finance · analytics · economic consulting</p>
+  <nav id="nav" aria-label="Sections">
+    <a href="#/today"  data-v="today">Today</a>
+    <a href="#/desk"   data-v="desk">Desk <b class="count" id="nav-n">0</b></a>
+    <a href="#/tracks" data-v="tracks">Tracks</a>
+    <a href="#/about"  data-v="about">About</a>
+  </nav>
+
+  <div class="topright">
+    <span class="streakpill" id="streakpill" title="Consecutive days with at least one finished task"></span>
+    <button class="iconbtn" id="theme" type="button" aria-label="Switch to daylight">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3.4" fill="currentColor"/><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 .9v2M8 13.1v2M.9 8h2M13.1 8h2M3 3l1.4 1.4M11.6 11.6 13 13M13 3l-1.4 1.4M4.4 11.6 3 13"/></g></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+
+<!-- ══ TODAY ══════════════════════════════════════════════════════════ -->
+<section class="view" id="v-today">
+
+  <div class="hero" id="hero">
+    <div class="herotext">
+      <p class="lbl">Finance &middot; analytics &middot; economic consulting</p>
       <h1>The Desk</h1>
-      <p class="tagline">Every finished task leaves something behind. The desk filling up is the progress — not the streak.</p>
+      <p class="lede" id="lede">Tell it how long you have. It gives you one real task.
+        You do the work in your own tools, log how it went in four taps,
+        and an artifact lands on the desk.</p>
+      <div class="row">
+        <button class="btn primary" id="begin" type="button">Choose a budget</button>
+        <a class="btn ghost" href="#/about">How it works</a>
+      </div>
     </div>
-    <div class="streak" title="Consecutive days with at least one finished task">
-      <b class="mono" id="streak-n">0</b>
-      <span id="streak-label">no streak —<br>start one today</span>
-    </div>
-  </header>
 
-  <!-- ── Today: budget → one task → check-in ───────────────────────── -->
-  <section class="panel" aria-labelledby="today-h">
+    <!-- the lamp: the one piece of scenery, and the source of the page's light -->
+    <div class="heroart" aria-hidden="true">
+      <div class="glow"></div>
+      <svg viewBox="0 0 280 200" class="lamp">
+        <defs>
+          <linearGradient id="cone" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"  stop-color="var(--lamp)" stop-opacity=".30"/>
+            <stop offset="100%" stop-color="var(--lamp)" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <!-- light cone -->
+        <path d="M118 52 L30 168 L214 168 Z" fill="url(#cone)"/>
+        <!-- arm + base -->
+        <path d="M232 170 L232 120 Q232 96 196 80 L140 56" stroke="var(--line-2)" stroke-width="4"
+              fill="none" stroke-linecap="round"/>
+        <ellipse cx="232" cy="172" rx="30" ry="6" fill="var(--line-2)"/>
+        <!-- shade -->
+        <path d="M100 36 L152 62 L128 78 L82 50 Z" fill="var(--surface-2)" stroke="var(--line-2)" stroke-width="2.5" stroke-linejoin="round"/>
+        <circle cx="117" cy="59" r="5" fill="var(--lamp)"/>
+        <!-- the paper under the light: a small regression -->
+        <g transform="translate(66 108)">
+          <rect width="116" height="58" rx="3" fill="var(--paper)" stroke="var(--line-2)" stroke-width="1.5"/>
+          <path d="M14 46 L102 16" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+          <g fill="var(--ink-2)">
+            <circle cx="24" cy="44" r="2.4"/><circle cx="42" cy="37" r="2.4"/>
+            <circle cx="58" cy="33" r="2.4"/><circle cx="76" cy="24" r="2.4"/>
+            <circle cx="94" cy="20" r="2.4"/>
+          </g>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="lampzone">
     <div class="panel-head">
       <h2 id="today-h">How long have you got?</h2>
       <p class="hint" id="budget-hint">Pick a budget and you'll get one task that fits it.</p>
     </div>
     <div class="budget" id="budget" role="group" aria-label="Time available today"></div>
     <div id="slot"></div>
-  </section>
+  </div>
 
-  <!-- ── The desk: artifacts from finished work ────────────────────── -->
-  <section class="panel" aria-labelledby="desk-h">
-    <div class="panel-head">
-      <h2 id="desk-h">The desk</h2>
-      <p class="hint">Artifacts from finished work. The brass pin marks something you could show an employer.</p>
-    </div>
-    <div id="desk"></div>
-  </section>
+  <p class="viewfoot" id="foot"></p>
+</section>
 
-  <!-- ── Tracks: state earned from evidence ────────────────────────── -->
-  <section class="panel" aria-labelledby="tracks-h">
-    <div class="panel-head">
-      <h2 id="tracks-h">Tracks</h2>
-      <p class="hint">Bars are completed tasks, coloured by how it went. State is earned from evidence, never from time spent.</p>
-    </div>
-    <div class="tracks" id="tracks"></div>
-  </section>
+<!-- ══ DESK ═══════════════════════════════════════════════════════════ -->
+<section class="view" id="v-desk" hidden>
+  <div class="viewhead">
+    <h2>The desk</h2>
+    <p class="hint">Artifacts from finished work. The brass pin marks something concrete enough to show an employer.</p>
+  </div>
+  <div class="filters" id="desk-filters" role="group" aria-label="Filter artifacts"></div>
+  <div id="desk"></div>
+</section>
 
-  <!-- ── Your data ─────────────────────────────────────────────────── -->
-  <section class="panel" aria-labelledby="data-h">
-    <div class="panel-head">
-      <h2 id="data-h">Your data</h2>
-      <p class="hint">Everything is stored in this browser only. Nothing is uploaded anywhere.</p>
-    </div>
-    <div class="row">
-      <button class="btn" id="export" type="button">Export JSON</button>
-      <label class="btn" for="import-file">Import JSON</label>
-      <input type="file" id="import-file" accept="application/json,.json" hidden>
-      <button class="btn danger" id="reset" type="button">Erase everything</button>
-      <span class="toast" id="data-toast" role="status"></span>
-    </div>
-    <p class="hint" style="margin-top:10px">
-      Export before clearing site data or switching browser — localStorage does not travel with you.
-      The export is also the quickest way to hand your progress to someone for review.
-    </p>
-  </section>
+<!-- ══ TRACKS ═════════════════════════════════════════════════════════ -->
+<section class="view" id="v-tracks" hidden>
+  <div class="viewhead">
+    <h2>Tracks</h2>
+    <p class="hint">State is earned from finished work and how it went &mdash; never from time spent.
+      A bad recent run overrides a good lifetime average, because the question is what you can do now.</p>
+  </div>
+  <div class="tracks" id="tracks"></div>
+</section>
 
-  <footer id="foot"></footer>
+<!-- ══ ABOUT ══════════════════════════════════════════════════════════ -->
+<section class="view" id="v-about" hidden>
+  <div class="viewhead">
+    <h2>How it works</h2>
+  </div>
 
-</div>
+  <div class="prose">
+    <h3>Three rules</h3>
+    <p><b>The reward is the evidence.</b> There are no points and no badges. Finishing a task puts an
+      artifact on the desk. The grid filling up <i>is</i> the progress display. The streak counter exists,
+      but its label says &ldquo;days in a row showing up&rdquo;, because that is all it measures.</p>
+    <p><b>Track state is earned from outcomes, never from time.</b> Each track moves
+      Not started &rarr; Building &rarr; Solid &rarr; Interview-ready on finished tasks and how they went.
+      Two or more shaky results in the last four flags the track for review and overrides everything above it.</p>
+    <p><b>Reflection is four taps.</b> One outcome, one optional friction chip, no text field.
+      Those two signals drive the review flag and the recommender; a paragraph would not drive them
+      any better and would not get written.</p>
+
+    <h3>What the recommender does</h3>
+    <p>Every task that fits your budget is scored, highest wins, and <i>Different task</i> takes the runner-up:</p>
+    <pre class="mono">+40   track has the fewest finished tasks
++0–20 track untouched longest (3 points per day, capped)
+−18   per previous completion of this exact task
++16   track currently flagged Needs review
++0–10 task length close to the budget</pre>
+    <p>The weights are a first guess and visibly arbitrary. They live in one function
+      (<code>Engine.rank</code>) precisely so they can be rewritten once there is real usage to tune against.</p>
+
+    <h3>Your data</h3>
+    <p>Everything is stored in this browser's <code>localStorage</code> under one key. Nothing is uploaded
+      and there is no backend. The page is public; your log is not, because it never leaves this machine.
+      That has a consequence: clearing site data erases it, and it does not travel to another browser.
+      Export before you clear anything. Import merges by entry id, so restoring an old backup never
+      destroys newer work.</p>
+  </div>
+
+  <div class="row">
+    <button class="btn" id="export" type="button">Export JSON</button>
+    <label class="btn" for="import-file" tabindex="0">Import JSON</label>
+    <input type="file" id="import-file" accept="application/json,.json" hidden>
+    <button class="btn danger" id="reset" type="button">Erase everything</button>
+    <span class="toast" id="data-toast" role="status"></span>
+  </div>
+
+  <p class="viewfoot">
+    Built by Cecilia Li. No framework, no build step, no dependencies &mdash;
+    <a href="https://github.com/CeciliaGraceLi/the-desk">source on GitHub</a>.
+  </p>
+</section>
+
+</main>
 
 <script src="js/tasks.js"></script>
 <script src="js/store.js"></script>

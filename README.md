@@ -64,9 +64,16 @@ the-desk/
 └── js/
     ├── tasks.js        content. The task bank. Edit this to add tasks
     ├── store.js        persistence. localStorage, export/import
-    ├── recommend.js    logic. Stats, track state, streak, ranking. No DOM
-    └── app.js          view. Reads the store, asks the engine, draws
+    ├── recommend.js    logic. Stats, track state, requirements, streak, ranking. No DOM
+    └── app.js          view. Router, four views, DOM
 ```
+
+Four views sit behind a hash router — `#/today`, `#/desk`, `#/tracks`, `#/about` — so each
+has its own URL, the back button works, and a view can be linked to directly. The top bar
+is persistent and carries the artifact count and the streak pill.
+
+The palette is night by default, because the page is meant to be used in the evening after
+class. A daylight theme is one toggle away in the top bar and is remembered.
 
 The split is the point: `recommend.js` has no DOM access and `app.js` has no business rules, so the scoring logic can be reasoned about — or tested — without a browser. Adding a task means editing one data file.
 
