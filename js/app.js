@@ -260,9 +260,13 @@
           </div>
         </details>
 
+        <div class="edhead">
+          <label class="lbl" for="editor">Your query</label>
+          <span class="hint">click in and type &middot; ⌘/Ctrl + Enter runs it</span>
+        </div>
         <textarea id="editor" class="mono" spellcheck="false" rows="9"
+          placeholder="Write SQL here, then press Run.&#10;&#10;Tables: markets · firms · quarterly_revenue · events&#10;Try: SELECT * FROM firms"
           aria-label="SQL query">${esc(st.sql || '')}</textarea>
-        <p class="hint kbd">⌘/Ctrl + Enter runs it.</p>
 
         <div class="row">
           <button class="btn primary" id="run" type="button">Run</button>
