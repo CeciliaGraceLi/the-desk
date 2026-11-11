@@ -10,7 +10,7 @@
   const $ = id => document.getElementById(id);
   const esc = s => { const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; };
 
-  const VIEWS = ['today', 'desk', 'tracks', 'about'];
+  const VIEWS = ['today', 'practice', 'desk', 'tracks', 'about'];
   const BUDGETS = [15, 30, 60, 90];
   const OUTCOMES = [
     ['cold',  'Did it cold'],
@@ -30,6 +30,31 @@
   let pendingOutcome = null;
   let pendingFriction = null;
   let deskFilter = 'all';
+  let exId = null;
+
+  /* Exercises are tasks too: registering them here means the desk, the
+     track states and the recommender all see them with no special cases.
+     `ex:true` is the only thing the view treats differently — it sends
+     you to Practice instead of asking you to go and do it elsewhere. */
+  EXERCISES.forEach(e => TASKS.push({
+    id: e.id, s: e.s, m: e.m, t: e.t, ex: true,
+    brief: e.ask,
+    why:   'Runnable here — you write the query, the database runs it, and the rows are checked.',
+    done:  'The checker says the rows match.',
+    good:  'You can say why that query and not another one, and read the result as an economist rather than a programmer.'
+  }));
+
+  /** A result set as a table. */
+  function grid(r) {
+    if (!r.cols.length) return `<p class="hint" style="margin-top:12px">That statement returned no result set.</p>`;
+    const head = r.cols.map(c => `<th>${esc(c)}</th>`).join('');
+    const body = r.rows.slice(0, 60).map(row =>
+      `<tr>${row.map(c => `<td${typeof c === 'number' ? ' class="num"' : ''}>${c === null ? '<i>NULL</i>' : esc(c)}</td>`).join('')}</tr>`
+    ).join('');
+    const more = r.rows.length > 60 ? `<p class="hint">…${r.rows.length - 60} more rows.</p>` : '';
+    return `<div class="gridwrap"><table class="rgrid mono"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>
+      <p class="hint">${r.rows.length} row${r.rows.length === 1 ? '' : 's'}.</p>${more}`;
+  }
 
   /* ══ router ════════════════════════════════════════════ */
   function viewName() {
@@ -39,6 +64,7 @@
 
   function route() {
     const v = viewName();
+    const sub = (/^#\/[a-z]+\/([\w-]+)/.exec(location.hash) || [])[1];
     VIEWS.forEach(k => { $('v-' + k).hidden = k !== v; });
     [...document.querySelectorAll('#nav a')].forEach(a => {
       const on = a.dataset.v === v;
@@ -47,6 +73,10 @@
     });
     if (v === 'desk')   renderDesk();
     if (v === 'tracks') renderTracks();
+    if (v === 'practice') {
+      if (sub && EXERCISES.some(e => e.id === sub)) exId = sub;
+      renderPractice();
+    }
     window.scrollTo({ top: 0 });
   }
 
@@ -106,7 +136,9 @@
         <div><b>A strong answer has</b>${t.good}</div>
       </div>
       <div class="row">
-        <button class="btn primary" id="finish" type="button">I did this</button>
+        ${t.ex
+          ? `<a class="btn primary" href="#/practice/${t.id}">Open it in Practice</a>`
+          : `<button class="btn primary" id="finish" type="button">I did this</button>`}
         <button class="btn" id="swap" type="button">Different task</button>
       </div>
       <div id="ci"></div>
@@ -118,6 +150,7 @@
       pendingOutcome = pendingFriction = null;
       renderSlot();
     });
+    if (t.ex) return;
     $('finish').addEventListener('click', () => {
       renderCheckin();
       $('ci').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -161,6 +194,206 @@
       current = Engine.rank(Store.completions(), budget).filter(x => x.id !== finished.id)[0] || null;
       renderSlot('Logged — something landed on the desk.');
       renderChrome(true);
+    });
+  }
+
+  /* ══ PRACTICE ══════════════════════════════════════════
+     A real database in the tab. The reference query's output is the
+     expected answer, so there is no hand-written key to drift out of
+     step with the data. Solving an exercise logs a completion like
+     any other task, with the outcome derived from whether help was
+     used — and she can correct that in one tap if it is wrong.      */
+
+  const exAll   = () => Store.profile().ex || {};
+  const exOf    = id => exAll()[id] || {};
+  const exPatch = (id, patch) => {
+    const all = { ...exAll() };
+    all[id] = { ...(all[id] || {}), ...patch };
+    Store.setProfile({ ex: all });
+  };
+  const exSolved = () => EXERCISES.filter(e => exOf(e.id).solved).length;
+
+  function renderPractice() {
+    if (!exId) exId = (EXERCISES.find(e => !exOf(e.id).solved) || EXERCISES[0]).id;
+
+    $('plist').innerHTML = EXERCISES.map((e, i) => {
+      const st = exOf(e.id);
+      const cls = st.solved ? 'done' : st.tried ? 'tried' : '';
+      return `<button class="pitem${e.id === exId ? ' on' : ''}" type="button" data-e="${e.id}"
+                aria-current="${e.id === exId}">
+        <span class="pdot ${cls}"></span>
+        <span class="pnm"><b>${i + 1}.</b> ${esc(e.t)}</span>
+        <span class="pmin">${e.m}m</span>
+      </button>`;
+    }).join('');
+    [...$('plist').children].forEach(b => b.addEventListener('click', () => {
+      exId = b.dataset.e;
+      location.hash = '#/practice/' + exId;
+      renderPractice();
+    }));
+
+    renderExercise();
+  }
+
+  function renderExercise() {
+    const e = EXERCISES.find(x => x.id === exId);
+    const st = exOf(e.id);
+
+    $('pmain').innerHTML = `
+      <div class="pcard">
+        <div class="top">
+          <h3>${esc(e.t)}</h3>
+          <div class="meta"><span class="tag">${esc(SKILLS[e.s].n)}</span><span class="tag time">${e.m} min</span></div>
+        </div>
+        <p class="ask">${e.ask}</p>
+        <p class="shape mono">return: ${e.shape.join(' · ')}${e.ordered ? '  ·  row order matters' : '  ·  any row order'}</p>
+
+        <details class="schema">
+          <summary>The database</summary>
+          <div class="schemabody">
+            ${SCHEMA.map(t => `<div class="stable">
+              <b class="mono">${t.t}</b> <span class="hint">${t.n} rows</span>
+              <ul>${t.c.map(c => `<li class="mono">${esc(c)}</li>`).join('')}</ul>
+            </div>`).join('')}
+            <p class="hint">Three markets, four firms in each, eight quarters (2024 Q1 – 2025 Q4), and three dated events.
+              Run <code>SELECT * FROM firms</code> any time to look around.</p>
+          </div>
+        </details>
+
+        <textarea id="editor" class="mono" spellcheck="false" rows="9"
+          aria-label="SQL query">${esc(st.sql || '')}</textarea>
+        <p class="hint kbd">⌘/Ctrl + Enter runs it.</p>
+
+        <div class="row">
+          <button class="btn primary" id="run" type="button">Run</button>
+          <button class="btn" id="hint" type="button">${st.hinted ? 'Hint' : 'Hint'}</button>
+          <button class="btn" id="sol" type="button">Show solution</button>
+          <button class="btn" id="clear" type="button">Clear</button>
+        </div>
+
+        <div id="hintbox">${st.hinted ? `<p class="hintbox">${e.hint}</p>` : ''}</div>
+        <div id="verdict"></div>
+        <div id="out"></div>
+        <div id="solbox">${st.shown ? solutionHTML(e) : ''}</div>
+
+        <div class="reslist">
+          ${e.res.map(r => r.url
+            ? `<a class="res" href="${r.url}" target="_blank" rel="noopener">${esc(r.label)} ↗</a>`
+            : `<span class="res flat">${esc(r.label)}</span>`).join('')}
+        </div>
+      </div>`;
+
+    const ed = $('editor');
+    ed.addEventListener('input', () => exPatch(e.id, { sql: ed.value }));
+    ed.addEventListener('keydown', ev => {
+      if (ev.key === 'Enter' && (ev.metaKey || ev.ctrlKey)) { ev.preventDefault(); run(); }
+      if (ev.key === 'Tab') {
+        ev.preventDefault();
+        const s = ed.selectionStart;
+        ed.value = ed.value.slice(0, s) + '  ' + ed.value.slice(ed.selectionEnd);
+        ed.selectionStart = ed.selectionEnd = s + 2;
+        exPatch(e.id, { sql: ed.value });
+      }
+    });
+
+    $('run').addEventListener('click', run);
+    $('hint').addEventListener('click', () => {
+      exPatch(e.id, { hinted: true });
+      $('hintbox').innerHTML = `<p class="hintbox">${e.hint}</p>`;
+    });
+    $('sol').addEventListener('click', () => {
+      exPatch(e.id, { shown: true });
+      $('solbox').innerHTML = solutionHTML(e);
+    });
+    $('clear').addEventListener('click', () => {
+      ed.value = ''; exPatch(e.id, { sql: '' });
+      $('out').innerHTML = ''; $('verdict').innerHTML = '';
+    });
+
+    async function run() {
+      const sql = ed.value.trim();
+      if (!sql) return;
+      $('verdict').innerHTML = `<p class="pv wait">Starting the database…</p>`;
+      try { await DB.ready(); } catch (err) {
+        $('verdict').innerHTML = `<p class="pv bad">The database could not start in this browser. ${esc(String(err))}</p>`;
+        return;
+      }
+      $('verdict').innerHTML = '';
+
+      let actual;
+      try { actual = DB.run(sql); }
+      catch (err) {
+        $('out').innerHTML = '';
+        $('verdict').innerHTML = `<p class="pv bad"><b>SQLite says:</b> ${esc(String(err.message || err))}</p>`;
+        exPatch(e.id, { tried: true, sql });
+        renderPractice2();
+        return;
+      }
+
+      $('out').innerHTML = grid(actual);
+      const expected = DB.run(e.ref);
+      const v = DB.compare(expected, actual, e.ordered);
+      exPatch(e.id, { tried: true, sql });
+
+      if (!v.ok) {
+        $('verdict').innerHTML = `<p class="pv bad">Not yet — ${esc(v.why)}</p>`;
+        renderPractice2();
+        return;
+      }
+
+      const first = !exOf(e.id).solved;
+      exPatch(e.id, { solved: true });
+      const outcome = exOf(e.id).shown ? 'part' : exOf(e.id).hinted ? 'ref' : 'cold';
+      if (first) logExercise(e, outcome);
+      $('verdict').innerHTML = `<p class="pv good">Correct — ${expected.rows.length} row${expected.rows.length === 1 ? '' : 's'}, matching.
+        ${first ? `Logged as <b>${esc(OUTCOMES.find(o => o[0] === outcome)[1])}</b>
+          <button class="linkbtn" id="fix" type="button">change</button>` : 'Already on the desk.'}</p>`;
+      if (first) $('fix').addEventListener('click', () => {
+        $('verdict').innerHTML = `<div class="outs">${OUTCOMES.map(([k, l]) =>
+          `<button class="out${k === outcome ? ' on' : ''}" type="button" data-o="${k}"><i></i>${l}</button>`).join('')}</div>`;
+        [...document.querySelectorAll('#verdict .out')].forEach(b => b.addEventListener('click', () => {
+          const comps = Store.completions();
+          for (let i = comps.length - 1; i >= 0; i--)
+            if (comps[i].taskId === e.id) { comps[i].out = b.dataset.o; break; }
+          Store.setProfile({});           // forces a save of the mutated store
+          $('verdict').innerHTML = `<p class="pv good">Logged as <b>${esc(OUTCOMES.find(o => o[0] === b.dataset.o)[1])}</b>.</p>`;
+          renderChrome(true);
+        }));
+      });
+      if (!exOf(e.id).shown) $('solbox').innerHTML = solutionHTML(e, true);
+      renderPractice2();
+      renderChrome(true);
+    }
+  }
+
+  /** Redraw only the list, so running a query does not rebuild the editor. */
+  function renderPractice2() {
+    const host = $('plist');
+    [...host.children].forEach(b => {
+      const st = exOf(b.dataset.e);
+      const dot = b.querySelector('.pdot');
+      dot.className = 'pdot ' + (st.solved ? 'done' : st.tried ? 'tried' : '');
+    });
+    $('nav-p').textContent = exSolved() + '/' + EXERCISES.length;
+  }
+
+  function solutionHTML(e, earned) {
+    return `<div class="sol">
+      <b class="lbl">${earned ? 'One way to write it' : 'Solution'}</b>
+      <pre class="mono">${esc(e.ref)}</pre>
+      <div class="solnotes">${e.notes}</div>
+    </div>`;
+  }
+
+  /** A solved exercise is a finished task: it lands on the desk and moves the track. */
+  function logExercise(e, outcome) {
+    Store.addCompletion({
+      taskId: e.id,
+      date: Engine.today(),
+      out: outcome,
+      friction: null,
+      minutes: e.m,
+      at: new Date().toISOString()
     });
   }
 
@@ -259,6 +492,7 @@
     const n = Engine.streak(comps);
 
     $('nav-n').textContent = comps.length;
+    $('nav-p').textContent = exSolved() + '/' + EXERCISES.length;
     if (bump) { $('nav-n').classList.remove('bump'); void $('nav-n').offsetWidth; $('nav-n').classList.add('bump'); }
 
     $('streakpill').textContent = n === 0 ? 'no streak yet'

@@ -50,6 +50,7 @@ After each task: one of **Did it cold / Needed a reference / Got partway / Stuck
 +0–20 track untouched longest (3 points per day, capped)
 −18   per previous completion of this exact task
 +16   track currently flagged Needs review
++12   exercise that runs and checks itself
 +0–10 task length close to the budget
 ```
 
@@ -61,11 +62,14 @@ Highest score wins; **Different task** takes the runner-up. The weights are a fi
 the-desk/
 ├── index.html          markup only — no logic, no content
 ├── css/style.css       tokens first, then components
+├── vendor/sql.js/      SQLite compiled to WebAssembly (MIT), vendored
 └── js/
     ├── tasks.js        content. The task bank. Edit this to add tasks
+    ├── exercises.js    content. The runnable exercises and the schema
+    ├── db.js           the seed database and the result comparison
     ├── store.js        persistence. localStorage, export/import
     ├── recommend.js    logic. Stats, track state, requirements, streak, ranking. No DOM
-    └── app.js          view. Router, four views, DOM
+    └── app.js          view. Router, five views, DOM
 ```
 
 Four views sit behind a hash router — `#/today`, `#/desk`, `#/tracks`, `#/about` — so each
@@ -77,7 +81,29 @@ class. A daylight theme is one toggle away in the top bar and is remembered.
 
 The split is the point: `recommend.js` has no DOM access and `app.js` has no business rules, so the scoring logic can be reasoned about — or tested — without a browser. Adding a task means editing one data file.
 
-No framework, no build step, no dependencies. It is a static site; `git push` deploys it.
+No framework and no build step. One dependency — [sql.js](https://github.com/sql-js/sql.js)
+(SQLite compiled to WebAssembly, MIT), vendored rather than pulled from a CDN so the site keeps
+working offline and does not depend on anyone else's uptime. It is a static site; `git push`
+deploys it.
+
+## Practice
+
+The SQL exercises execute. A seeded SQLite database — three markets, four firms in each, eight
+quarters of revenue, a few dated events — is built in the browser on load, you write a query
+against it, and the rows you get back are compared against the expected answer.
+
+The expected answer is not written down. Each exercise carries a *reference query*, and whatever
+that query returns is the answer, so the key cannot drift out of step with the data when the seed
+changes. Comparison ignores column names, matches numbers within a small tolerance, and only
+enforces row order when the question asks for an order.
+
+Solving an exercise logs a completion like any other task — it lands on the desk, it moves the
+track. The outcome is inferred from whether help was used (no help → cold, hint → needed a
+reference, solution opened → got partway) and one tap corrects it.
+
+Stata and Excel cannot run in a browser, and nothing claims otherwise. Those tracks keep the
+do-it-in-your-own-tools loop, and the planned addition for them is an answer box checked against
+an expected value with a worked derivation behind it — not a fake console.
 
 ## Data and privacy
 
@@ -89,6 +115,8 @@ That has one consequence worth knowing: **localStorage is per-browser and per-de
 
 - **The weights are guesses.** They need real usage before they mean anything. The honest version of this project ships, gets used for a month, and then the ranking gets rewritten against what actually happened.
 - **"Did it cold" is self-reported.** Nothing verifies it. A version that timed the work, or checked an answer, would produce a track state worth more.
+- **Eight runnable exercises, and only in SQL.** Python can run in the browser too (Pyodide);
+  it is a ~10MB download, which is the only reason it is not here yet.
 - **Twenty-two tasks is thin.** It runs dry in a few weeks of daily use.
 - **No spaced repetition.** A task done cold in October should resurface in November to check it stuck. Right now a completed task is simply deprioritised forever.
 - **Accessibility is adequate, not good.** Buttons carry `aria-pressed` and focus is visible, but the desk grid and track bars are not described for a screen reader.

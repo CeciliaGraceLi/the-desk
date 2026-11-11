@@ -130,6 +130,9 @@ const Engine = (function () {
         score += s.last ? Math.min(20, (Date.parse(today()) - Date.parse(s.last)) / DAY * 3) : 20;
         score -= (timesDone[t.id] || 0) * 18;
         if (trackState(s)[1] === 'review') score += 16;
+        // An exercise that executes and checks itself produces a better
+        // signal than a self-reported task, so it is preferred where both fit.
+        if (t.ex) score += 12;
         score += Math.max(0, 10 - (budget - t.m) / 6);
         return { t, score };
       })

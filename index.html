@@ -28,6 +28,7 @@
 
   <nav id="nav" aria-label="Sections">
     <a href="#/today"  data-v="today">Today</a>
+    <a href="#/practice" data-v="practice">Practice <b class="count" id="nav-p">0/8</b></a>
     <a href="#/desk"   data-v="desk">Desk <b class="count" id="nav-n">0</b></a>
     <a href="#/tracks" data-v="tracks">Tracks</a>
     <a href="#/about"  data-v="about">About</a>
@@ -104,6 +105,20 @@
   <p class="viewfoot" id="foot"></p>
 </section>
 
+<!-- ══ PRACTICE ═══════════════════════════════════════════════════════ -->
+<section class="view" id="v-practice" hidden>
+  <div class="viewhead">
+    <h2>Practice</h2>
+    <p class="hint">A real SQLite database running in this tab — write the query, run it, and the rows are
+      checked against the expected answer. Nothing is uploaded, and you cannot break the database:
+      it is rebuilt from the seed on every page load.</p>
+  </div>
+  <div class="pwrap">
+    <aside class="plist" id="plist" aria-label="Exercises"></aside>
+    <div class="pmain" id="pmain"></div>
+  </div>
+</section>
+
 <!-- ══ DESK ═══════════════════════════════════════════════════════════ -->
 <section class="view" id="v-desk" hidden>
   <div class="viewhead">
@@ -142,12 +157,24 @@
       Those two signals drive the review flag and the recommender; a paragraph would not drive them
       any better and would not get written.</p>
 
+    <h3>How Practice is checked</h3>
+    <p>The SQL exercises run against a real SQLite database compiled to WebAssembly, in this tab.
+      Each exercise carries a <i>reference query</i>, and the expected answer is whatever that
+      query returns — there is no hand-written answer key, so the key cannot drift out of step
+      with the data. Your rows are compared to its rows: column names are ignored, numbers match
+      within a small tolerance, and row order only matters when the question says it does.</p>
+    <p>Solving an exercise logs a completion like any other task, so it lands on the desk and
+      moves the track. The outcome is inferred — cold if you used neither hint nor solution, needed
+      a reference if you took the hint, got partway if you opened the solution first — and one tap
+      changes it if that reading is wrong.</p>
+
     <h3>What the recommender does</h3>
     <p>Every task that fits your budget is scored, highest wins, and <i>Different task</i> takes the runner-up:</p>
     <pre class="mono">+40   track has the fewest finished tasks
 +0–20 track untouched longest (3 points per day, capped)
 −18   per previous completion of this exact task
 +16   track currently flagged Needs review
++12   exercise that runs and checks itself
 +0–10 task length close to the budget</pre>
     <p>The weights are a first guess and visibly arbitrary. They live in one function
       (<code>Engine.rank</code>) precisely so they can be rewritten once there is real usage to tune against.</p>
@@ -176,7 +203,10 @@
 
 </main>
 
+<script src="vendor/sql.js/sql-wasm.js"></script>
 <script src="js/tasks.js"></script>
+<script src="js/exercises.js"></script>
+<script src="js/db.js"></script>
 <script src="js/store.js"></script>
 <script src="js/recommend.js"></script>
 <script src="js/app.js"></script>
